@@ -84,7 +84,7 @@ async def checkin(ctx: discord.commands.context.ApplicationContext):
         session.commit()
 
     await ctx.respond(
-        "[testing] Checkin registered.",
+        "Checkin registered.",
         ephemeral=True,
         delete_after=config.get("temporary_message_time", 120),
     )
@@ -132,7 +132,7 @@ async def checkout(
         session.commit()
 
     await ctx.respond(
-        f"[testing] {reply}",
+        reply,
         ephemeral=True,
         delete_after=config.get("temporary_message_time", 120),
     )
@@ -147,18 +147,15 @@ async def checkinstatus(ctx: discord.commands.context.ApplicationContext):
     users_out = []
     with Session(engine) as session:
         for user in session.query(DiscordUser).all():
-            print(user)
-            print(type(user))
-            print(dir(user))
             if user.checkin.is_in:
-                users_in.append(f"@{user.name}")
+                users_in.append(f"<@{user.discord_id}>")
             else:
-                users_out.append(f"- @{user.name}: {user.checkin.message}")
+                users_out.append(f"- <@{user.discord_id}>: {user.checkin.message}")
 
     outlist = "\n".join(users_out)
     await ctx.respond(
-        f"""In: {", ".join(users_in)}
-Out:
+        f"""**In:** {", ".join(users_in)}
+**Out:**
 {outlist}""",
         ephemeral=True,
         # delete_after=config.get("temporary_message_time", 120),
