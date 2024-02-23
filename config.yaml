@@ -1,0 +1,7 @@
+discord_server_ids:
+- 1168496116434731090  # Crew 2024
+- 173752509825941504  # OpenShell (Odd)
+
+temporary_message_time: 60
+
+database: sqlite:///checkin.db

@@ -1,0 +1,5 @@
+*.py[ocd]
+
+.env
+checkin.db
+discord.log
