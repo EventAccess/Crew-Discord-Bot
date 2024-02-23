@@ -1,5 +1,6 @@
+import datetime
 from typing import Optional
-from sqlalchemy import ForeignKey
+from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy import String, Integer, Boolean
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
@@ -38,3 +39,16 @@ class CheckinState(Base):
 
     def __repr__(self) -> str:
         return f"CheckinState(id={self.id!r}, user.name={self.user.name!r}, is_in={self.is_in!r}, message={self.message!r})"
+
+
+class SentStatusMessages(Base):
+    __tablename__ = "sent_status_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    channel: Mapped[int] = mapped_column(Integer)
+    message: Mapped[int] = mapped_column(Integer, unique=True)
+    time_sendt: Mapped[DateTime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+    def __repr__(self) -> str:
+        return f"SentStatusMessages(id={self.id!r}, channel={self.channel!r}, message={self.message!r}, time_sendt={self.time_sendt!r})"

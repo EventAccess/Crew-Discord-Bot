@@ -8,10 +8,9 @@ import discord
 import discord.ext.commands
 import yaml
 import sqlalchemy
-from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
-from .db.models import Base, DiscordUser, CheckinState
+from .db.models import Base, DiscordUser, CheckinState, SentStatusMessages
 
 dotenv.load_dotenv(os.environ.get("DISCORD_BOT_ENV"))
 
@@ -50,6 +49,45 @@ async def on_ready():
     logger.info(f"We have logged in as {bot.user}")
 
 
+async def generate_checkin_status_response(
+    ctx: discord.commands.context.ApplicationContext, extra=""
+):
+    users_in = []
+    users_out = []
+    with Session(engine) as session:
+        for user in session.query(DiscordUser).all():
+            if user.checkin.is_in:
+                users_in.append(f"<@{user.discord_id}>")
+            elif user.checkin.message:
+                users_out.append(f"- <@{user.discord_id}>: *{user.checkin.message}*")
+            else:
+                users_out.append(f"- <@{user.discord_id}>")
+
+    inlist = ", ".join(users_in)
+    outlist = "\n".join(users_out)
+
+    msg: discord.Interaction = await ctx.respond("...")
+    await msg.edit_original_response(
+        content=f"**In:** {inlist}\n**Out:**\n{outlist}\n{extra}"
+    )
+
+    with Session(engine) as session:
+        for sent_message in (
+            session.query(SentStatusMessages)
+            .filter(SentStatusMessages.channel == msg.channel_id)
+            .all()
+        ):
+            m = bot.get_message(sent_message.message)
+            if m is not None:
+                await m.delete()
+            session.delete(sent_message)
+
+        sent_message = SentStatusMessages(channel=msg.channel_id, message=msg.id)
+
+        session.add_all([sent_message])
+        session.commit()
+
+
 @bot.slash_command(
     description="Mark yourself as on the LAN right now.",
     guild_ids=config.get("discord_server_ids", []),
@@ -83,10 +121,8 @@ async def checkin(ctx: discord.commands.context.ApplicationContext):
         user.checkin.message = None
         session.commit()
 
-    await ctx.respond(
-        "Checkin registered.",
-        ephemeral=True,
-        delete_after=config.get("temporary_message_time", 120),
+    await generate_checkin_status_response(
+        ctx, f"\n***{ctx.user.display_name} checked in.***"
     )
 
 
@@ -105,9 +141,9 @@ async def checkout(
     message: Optional[str],
 ):
     if message is None:
-        reply = "Checkout registered. Tip: Run the command again with an argument saying why."
+        reply = f"\n***{ctx.user.display_name} checked out.***"
     else:
-        reply = f"Checkout registered with message {message!r}"
+        reply = f"\n***{ctx.user.display_name} checked out:***\n> {message!s}"
 
     with Session(engine) as session:
 
@@ -131,11 +167,7 @@ async def checkout(
         user.checkin.message = message
         session.commit()
 
-    await ctx.respond(
-        reply,
-        ephemeral=True,
-        delete_after=config.get("temporary_message_time", 120),
-    )
+    await generate_checkin_status_response(ctx, reply)
 
 
 @bot.slash_command(
@@ -143,23 +175,7 @@ async def checkout(
     guild_ids=config.get("discord_server_ids", []),
 )
 async def checkinstatus(ctx: discord.commands.context.ApplicationContext):
-    users_in = []
-    users_out = []
-    with Session(engine) as session:
-        for user in session.query(DiscordUser).all():
-            if user.checkin.is_in:
-                users_in.append(f"<@{user.discord_id}>")
-            else:
-                users_out.append(f"- <@{user.discord_id}>: {user.checkin.message}")
-
-    outlist = "\n".join(users_out)
-    await ctx.respond(
-        f"""**In:** {", ".join(users_in)}
-**Out:**
-{outlist}""",
-        ephemeral=True,
-        # delete_after=config.get("temporary_message_time", 120),
-    )
+    await generate_checkin_status_response(ctx)
 
 
 def main():
