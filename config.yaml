@@ -4,4 +4,4 @@ discord_server_ids:
 
 temporary_message_time: 60
 
-database: sqlite:///checkin.db
+database: sqlite:////data/checkin.db

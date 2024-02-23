@@ -1,0 +1,13 @@
+*
+
+!/hordalan_discord
+!/Dockerfile
+!/compose.yaml
+!/requirements.txt
+!/docker-entrypoint.sh
+!/example.env
+!/config.yaml
+
+**/*.pyo
+**/*.pyc
+**/*.pyd

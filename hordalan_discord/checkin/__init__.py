@@ -13,18 +13,23 @@ from sqlalchemy.orm import Session, joinedload
 
 from .db.models import Base, DiscordUser, CheckinState
 
+dotenv.load_dotenv(os.environ.get("DISCORD_BOT_ENV"))
+
 logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+handler = logging.FileHandler(
+    filename=os.environ.get("DISCORD_BOT_LOGFILE", "discord.log"),
+    encoding="utf-8",
+    mode="w",
+)
 handler.setFormatter(
     logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
 )
 logger.addHandler(handler)
 
 
-dotenv.load_dotenv()
 with open(os.environ.get("DISCORD_BOT_CONFIG", "config.yaml"), "r") as fh:
     config = yaml.safe_load(fh)
 print(config)
