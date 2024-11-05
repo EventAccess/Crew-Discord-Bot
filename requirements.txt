@@ -1,4 +1,4 @@
 py-cord[speed]==2.4.1
 SQLAlchemy[asyncio]==2.0.27
 python-dotenv==1.0.1
-PyYAML==6.0.1
+PyYAML==6.0.2
